@@ -2,14 +2,13 @@ import express from 'express'
 import helmet from 'helmet'
 import bodyParser from 'body-parser'
 
-import { initializeApp, cert, App } from "firebase-admin/app";
-import {getMessaging} from "firebase-admin/messaging"
 
-let serviceAccount = JSON.parse(process.env.GOOGLE_SERVICES as string)
-
-const firebaseApp: App = initializeApp({
-    credential: cert(serviceAccount)
-  })
+const APP_USER : string = process.env.APP_USER!
+const APP_PASS: string = process.env.APP_PASS!
+let users : {[k: string] : any} = {}
+users[APP_USER] = APP_PASS
+console.log(users)
+/*
 
   const registrationToken = 'token';
 
@@ -35,8 +34,17 @@ getMessaging(firebaseApp).send(message)
   .catch((error) => {
     console.log('Error sending message:', error);
   });
+*/
 
-var app = express();
+const app = express();
+const basicAuth = require('express-basic-auth')
+const morgan = require('morgan')
+
+const messaging = require('./routes/messaging.route')
+
+app.use(morgan('[:date] :method :url :status :res[content-length] - :remote-addr - :response-time ms'));
+
+app.use(basicAuth({users}))
 
 app.use(express.json({limit: "6mb"}));
 app.use(express.urlencoded({ extended: false }));
@@ -51,6 +59,7 @@ app.use(helmet.contentSecurityPolicy({
   }
 }))
 
+app.use('/messaging', messaging)
 
 
 var port = process.env.PORT || '8000';
@@ -59,3 +68,4 @@ app.listen( port, () => {
 } );
 
 module.exports = app;
+
