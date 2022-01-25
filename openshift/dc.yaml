@@ -1,0 +1,174 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: workbc-mobile-notifications-api
+labels:
+  template: workbc-mobile-notifications-api
+objects:
+- apiVersion: v1
+  kind: Secret
+  type: opaque
+  metadata:
+    name: ${NAME}-service
+  stringData:
+    username: ${APP_USER}
+    password: ${APP_PASS}
+    serviceAccount: ${SERVICE_ACCOUNT}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    creationTimestamp: null
+    name: ${NAME}
+  spec:
+    lookupPolicy:
+      local: false
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    creationTimestamp: null
+    name: ${NAME}${SUFFIX}
+    labels: 
+      app.kubernetes.io/component: api
+      app.kubernetes.io/part-of: wbc-app
+      app.openshift.io/runtime: nodejs
+  spec:
+    replicas: 2
+    selector:
+      deploymentconfig: ${NAME}${SUFFIX}
+    strategy:
+      resources:
+        requests:
+          cpu: '100m'
+        limits:
+          cpu: '150m'
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          deploymentconfig: ${NAME}${SUFFIX}
+      spec:
+        containers:
+        - image: ${NAME}:${TAG}
+          name: ${NAME}
+          ports:
+          - containerPort: 8000
+            protocol: TCP
+          resources:
+            requests:
+              cpu: '100m'
+            limits:
+              cpu: '150m'
+          env:
+          - name: APP_USER
+            valueFrom:
+              secretKeyRef:
+                key: username
+                name: ${NAME}-service
+          - name: APP_PASS
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: ${NAME}-service
+          - name: GOOGLE_SERVICES
+            valueFrom:
+              secretKeyRef:
+                key: serviceAccount
+                name: ${NAME}-service
+          - name: PGUSER
+            valueFrom:
+              secretKeyRef:
+                key: app-db-username
+                name: ${PGSECRET_NAME}
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: app-db-password
+                name: ${PGSECRET_NAME}
+          - name: PGHOST
+            value: ${PGHOST}
+          - name: PGDATABASE
+            value: ${PGDATABASE}
+          - name: PGPORT
+            value: ${PGPORT}
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${NAME}:${TAG}
+          namespace: ${IMAGE_NAMESPACE}
+      type: ImageChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: ${NAME}${SUFFIX}
+  spec:
+    ports:
+    - name: api
+      port: 8000
+      protocol: TCP
+      targetPort: 8000
+    selector:
+      deploymentconfig: ${NAME}${SUFFIX}
+parameters:
+- description: A name used for all objects
+  displayName: Name
+  name: NAME
+  required: true
+  value: workbc-mobile-notifications-api
+- description: A name suffix used for all objects
+  displayName: Suffix
+  name: SUFFIX
+  required: false
+  value: ''
+- description: Tag used for the image tags
+  displayName: tag
+  name: TAG
+  required: true
+  value: latest
+- description: Name of Postgres secret that holds app-db-username and app-db-password
+  displayName: PGSECRET_NAME
+  name: PGSECRET_NAME
+  required: true
+  value: ''
+- description: Postgres Host
+  displayName: PGHOST
+  name: PGHOST
+  required: true
+  value: ''
+- description: Postgres Database
+  displayName: PGDATABASE
+  name: PGDATABASE
+  required: true
+  value: ''
+- description: Postgres Port
+  displayName: PGPORT
+  name: PGPORT
+  required: true
+  value: '5432'
+- description: App User
+  displayName: App User
+  name: APP_USER
+  required: true
+  value: ''
+- description: App Pass
+  displayName: App Pass
+  name: APP_PASS
+  required: true
+  value: ''
+- description: Service Account
+  displayName: Service Account
+  name: SERVICE_ACCOUNT
+  required: true
+  value: ''
+- description: The namespace of the OS project containing the imagestreams
+  displayName: Image Namespace
+  name: IMAGE_NAMESPACE
+  required: true
+  value: myproject-tools
