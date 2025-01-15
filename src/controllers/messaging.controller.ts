@@ -13,7 +13,15 @@ export const sendMessage = async (req: any, res: express.Response) => {
 
         let dryRun = typeof req.body.dryRun !== "undefined" ? req.body.dryRun : true
 
-        await messagingService.sendMessage(req.body.token, req.body.content, req.body.title, dryRun)
+        const messageData = {
+            token: req.body.token,
+            content: req.body.content,
+            title: req.body.title,
+            dryRun: dryRun,
+            data: req.data
+        };
+
+        await messagingService.sendMessage(messageData)
         .then((response) => {
             // Response is a message ID string.
             //console.log('Successfully sent message:', response);
