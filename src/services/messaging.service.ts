@@ -1,24 +1,35 @@
-import {getMessaging} from "firebase-admin/messaging"
-const firebaseApp = require("../config/firebase")
+import { getMessaging } from "firebase-admin/messaging";
+const firebaseApp = require("../config/firebase");
 
-export const sendMessage = async (token: string, content: string, title: string, dryRun: boolean): Promise<any> => {
+type MessagePayload = {
+    token: string;
+    content: string;
+    title: string;
+    dryRun: boolean;
+    data: Record<string, string>;
+}
+
+export const sendMessage = async (payload: MessagePayload): Promise<string> => {
     try {
-        
+        const { token, content, title, dryRun, data } = payload;
+
         const message = {
             notification: {
                 body: content,
                 title: title
             },
-            token: token
-        }
+            token: token,
+            data
+        };
+
         // Send a message to the device corresponding to the provided
         // registration token.
-        const resp = getMessaging(firebaseApp).send(message, dryRun)
+        const resp = getMessaging(firebaseApp).send(message, dryRun);
         //console.log(resp)
-        return resp
+        return resp;
 
     } catch (error: any) {
-        console.log(error)
-        throw new Error(error)
+        console.log(error);
+        throw new Error(error);
     }
-}
+};
