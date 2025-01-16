@@ -18,7 +18,7 @@ export const sendMessage = async (req: any, res: express.Response) => {
             content: req.body.content,
             title: req.body.title,
             dryRun: dryRun,
-            data: req.data
+            data: req.body.data
         };
 
         await messagingService.sendMessage(messageData)
