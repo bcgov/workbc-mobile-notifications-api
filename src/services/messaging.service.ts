@@ -21,7 +21,7 @@ export const sendMessage = async (payload: MessagePayload): Promise<string> => {
       token: token,
       data: {
         ...data,
-        ...('props' in data && { props: JSON.stringify(data.props) }),
+        ...(data && 'props' in data && { props: JSON.stringify(data.props) }),
       },
     };
 
